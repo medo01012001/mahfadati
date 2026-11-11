@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#020617">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="محفظتي">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>محفظتي المالية - تتبع التوفير</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#020617', /* bg-slate-950 */
+                        cardBg: '#0f172a', /* bg-slate-900 */
+                        brand: '#6366f1',
+                    },
+                    fontFamily: {
+                        sans: ['Tajawal', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; }
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+    </style>
+</head>
+<body class="bg-darkBg text-slate-100 min-h-screen py-8 px-4 sm:px-6">
+
+    <!-- Main Container - NO BORDERS HERE -->
+    <div class="max-w-5xl mx-auto space-y-6">
+        
+        <!-- Header -->
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-5 gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-white">محفظتي المالية</h1>
+                <p class="text-slate-400 text-sm mt-1">تتبع المداخيل، المصاريف، وراقب هدف التوفير ديالك</p>
+            </div>
+            <div class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-4 py-2 rounded-xl text-sm font-bold shadow-sm">
+                الهدف: 18,000 درهم
+            </div>
+        </header>
+
+        <!-- Goal Progress Bar -->
+        <div class="bg-cardBg rounded-2xl p-6 border border-slate-800 shadow-xl relative overflow-hidden">
+            <div class="absolute -right-20 -top-20 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="flex justify-between items-end mb-3 relative z-10">
+                <div>
+                    <span class="text-sm font-semibold text-slate-400">التقدم نحو الهدف</span>
+                    <h3 id="savedAmount" class="text-2xl font-bold text-white mt-1">0 درهم</h3>
+                </div>
+                <span id="goalPercent" class="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">0%</span>
+            </div>
+            <div class="w-full bg-slate-950 rounded-full h-4 overflow-hidden shadow-inner relative z-10 border border-slate-800">
+                <div id="goalBar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full rounded-full transition-all duration-700 ease-out w-0 relative">
+                    <div class="absolute top-0 left-0 right-0 bottom-0 bg-white/20" style="animation: shimmer 2s infinite;"></div>
+                </div>
+            </div>
+            <div class="flex justify-between text-xs font-medium text-slate-500 mt-3 relative z-10">
+                <span>البداية</span>
+                <span>18,000 درهم</span>
+            </div>
+        </div>
+
+        <!-- Cards Stats -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div class="bg-cardBg p-6 rounded-2xl border border-slate-800 shadow-lg flex flex-col justify-center">
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+                    <p class="text-sm text-slate-400 font-medium">الرصيد المتبقي (التوفير)</p>
+                </div>
+                <h2 id="totalBalance" class="text-3xl font-bold text-white mt-2">0 د.م</h2>
+            </div>
+            <div class="bg-cardBg p-6 rounded-2xl border border-slate-800 shadow-lg flex flex-col justify-center">
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+                    <p class="text-sm text-slate-400 font-medium">مجموع المداخيل</p>
+                </div>
+                <h2 id="totalIncome" class="text-3xl font-bold text-emerald-400 mt-2">0 د.م</h2>
+            </div>
+            <div class="bg-cardBg p-6 rounded-2xl border border-slate-800 shadow-lg flex flex-col justify-center">
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="w-2 h-2 rounded-full bg-rose-400"></div>
+                    <p class="text-sm text-slate-400 font-medium">مجموع المصاريف</p>
+                </div>
+                <h2 id="totalExpense" class="text-3xl font-bold text-rose-400 mt-2">0 د.م</h2>
+            </div>
+        </div>
+
+        <!-- Main Layout: Form + Transactions List -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Add Transaction Form -->
+            <div class="bg-cardBg p-6 rounded-2xl border border-slate-800 shadow-lg h-fit">
+                <h3 class="text-lg font-bold mb-5 text-white border-b border-slate-800 pb-3">إضافة عملية</h3>
+                <form id="transactionForm" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-2">شنو هاد العملية؟</label>
+                        <input type="text" id="desc" placeholder="مثلاً: صالير، كرا، تقضية..." required autocomplete="off"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-2">المبلغ (درهم)</label>
+                        <input type="number" id="amount" placeholder="0.00" min="1" step="any" required 
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-2">نوع العملية</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="flex items-center justify-center p-3 rounded-xl border border-slate-800 cursor-pointer hover:bg-slate-800/50 transition-colors bg-slate-950 group relative overflow-hidden">
+                                <input type="radio" name="type" value="income" class="hidden peer" checked>
+                                <div class="peer-checked:bg-emerald-500/10 peer-checked:border-emerald-500/50 absolute inset-0 border border-transparent rounded-xl transition-all"></div>
+                                <span class="text-sm font-bold text-slate-500 peer-checked:text-emerald-400 relative z-10 group-hover:text-slate-300 peer-checked:group-hover:text-emerald-300">مدخول (+)</span>
+                            </label>
+                            <label class="flex items-center justify-center p-3 rounded-xl border border-slate-800 cursor-pointer hover:bg-slate-800/50 transition-colors bg-slate-950 group relative overflow-hidden">
+                                <input type="radio" name="type" value="expense" class="hidden peer">
+                                <div class="peer-checked:bg-rose-500/10 peer-checked:border-rose-500/50 absolute inset-0 border border-transparent rounded-xl transition-all"></div>
+                                <span class="text-sm font-bold text-slate-500 peer-checked:text-rose-400 relative z-10 group-hover:text-slate-300 peer-checked:group-hover:text-rose-300">مصروف (-)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" 
+                        class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl text-sm transition-all duration-200 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40">
+                        حفظ العملية
+                    </button>
+                </form>
+            </div>
+
+            <!-- Transactions History -->
+            <div class="lg:col-span-2 bg-cardBg p-6 rounded-2xl border border-slate-800 shadow-lg flex flex-col h-[500px]">
+                <div class="flex justify-between items-center mb-5 border-b border-slate-800 pb-3">
+                    <h3 class="text-lg font-bold text-white">سجل العمليات</h3>
+                    <button onclick="showClearModal()" class="text-sm text-rose-400 hover:text-rose-300 hover:underline bg-rose-500/10 px-3 py-1 rounded-lg transition-colors">
+                        مسح الكل
+                    </button>
+                </div>
+
+                <div id="txList" class="flex-1 overflow-y-auto pr-2 space-y-3">
+                    <!-- Items rendered via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="confirmModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-cardBg border border-slate-800 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300" id="modalContent">
+            <div class="w-12 h-12 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-center text-white mb-2">تأكيد المسح</h3>
+            <p class="text-slate-400 text-center text-sm mb-6">واش متأكد باغي تمسح كاع العمليات؟ هاد الإجراء ما يمكنش تراجع عليه.</p>
+            <div class="flex gap-3">
+                <button onclick="hideClearModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-medium py-2.5 rounded-xl transition-colors">
+                    إلغاء
+                </button>
+                <button onclick="confirmClear()" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-medium py-2.5 rounded-xl transition-colors">
+                    نعم، امسح
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-cardBg border border-slate-800 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300" id="deleteModalContent">
+            <h3 class="text-xl font-bold text-center text-white mb-2">مسح عملية</h3>
+            <p class="text-slate-400 text-center text-sm mb-6">واش متأكد باغي تمسح هاد العملية؟</p>
+            <div class="flex gap-3">
+                <button onclick="hideDeleteModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-medium py-2.5 rounded-xl transition-colors">
+                    إلغاء
+                </button>
+                <button onclick="confirmDelete()" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-medium py-2.5 rounded-xl transition-colors">
+                    مسح
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Logic (data saved on the device) -->
+    <script>
+        const STORAGE_KEY = 'wallet-transactions-v1';
+        function loadTx() {
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch (e) { return []; }
+        }
+        function saveTx() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions)); } catch (e) { console.error(e); }
+        }
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        const GOAL = 18000;
+        let transactions = [];
+        let deleteIdToRemove = null;
+
+        const form = document.getElementById('transactionForm');
+        const descInput = document.getElementById('desc');
+        const amountInput = document.getElementById('amount');
+        const txList = document.getElementById('txList');
+        const totalBalance = document.getElementById('totalBalance');
+        const totalIncome = document.getElementById('totalIncome');
+        const totalExpense = document.getElementById('totalExpense');
+        const goalBar = document.getElementById('goalBar');
+        const goalPercent = document.getElementById('goalPercent');
+        const savedAmountText = document.getElementById('savedAmount');
+
+        const confirmModal = document.getElementById('confirmModal');
+        const modalContent = document.getElementById('modalContent');
+        const deleteModal = document.getElementById('deleteModal');
+        const deleteModalContent = document.getElementById('deleteModalContent');
+
+        function formatMoney(amount) {
+            return amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function updateUI() {
+            let income = 0;
+            let expense = 0;
+            txList.innerHTML = '';
+
+            if (transactions.length === 0) {
+                txList.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-slate-600 space-y-3 pt-10">
+                        <svg class="w-16 h-16 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <p class="text-sm font-medium">ما كاين حتى عملية مسجلة حالياً</p>
+                    </div>`;
+            }
+
+            transactions.forEach((tx) => {
+                const isIncome = tx.type === 'income';
+                if (isIncome) income += tx.amount;
+                else expense += tx.amount;
+
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-colors group';
+                item.innerHTML = `
+                    <div class="flex items-center space-x-4 space-x-reverse">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center ${isIncome ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}">
+                            ${isIncome 
+                                ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>'
+                                : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>'}
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-200">${escapeHtml(tx.desc)}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">${tx.date}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4 space-x-reverse">
+                        <span class="text-base font-bold ${isIncome ? 'text-emerald-400' : 'text-rose-400'}">
+                            ${isIncome ? '+' : '-'}${formatMoney(tx.amount)} د.م
+                        </span>
+                        <button onclick="requestDelete('${tx.id}')" class="text-slate-600 hover:text-rose-400 p-2 rounded-lg hover:bg-slate-800 transition-colors sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100" title="مسح">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                `;
+                txList.appendChild(item);
+            });
+
+            const balance = income - expense;
+            totalIncome.innerText = `${formatMoney(income)} د.م`;
+            totalExpense.innerText = `${formatMoney(expense)} د.م`;
+            totalBalance.innerText = `${formatMoney(balance)} د.م`;
+
+            let displayBalance = balance > 0 ? balance : 0;
+            const progress = Math.max(0, Math.min(100, (displayBalance / GOAL) * 100));
+            
+            setTimeout(() => { goalBar.style.width = `${progress}%`; }, 100);
+            
+            goalPercent.innerText = `${progress.toFixed(1)}%`;
+            savedAmountText.innerText = `${formatMoney(displayBalance)} درهم`;
+
+            if (progress >= 100) {
+                goalBar.classList.remove('from-indigo-500', 'to-emerald-400');
+                goalBar.classList.add('from-emerald-400', 'to-emerald-500');
+                goalPercent.classList.add('text-emerald-400');
+            } else {
+                goalBar.classList.add('from-indigo-500', 'to-emerald-400');
+                goalBar.classList.remove('from-emerald-400', 'to-emerald-500');
+                goalPercent.classList.remove('text-emerald-400');
+            }
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const desc = descInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            const type = document.querySelector('input[name="type"]:checked').value;
+            if (!desc || isNaN(amount) || amount <= 0) return;
+
+            transactions.unshift({
+                id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+                desc,
+                amount,
+                type,
+                date: new Date().toLocaleDateString('ar-MA', {
+                    year: 'numeric', month: 'long', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                }),
+                timestamp: Date.now()
+            });
+            saveTx();
+            updateUI();
+            descInput.value = '';
+            amountInput.value = '';
+        });
+
+        window.showClearModal = function() {
+            if(transactions.length === 0) return;
+            confirmModal.classList.remove('hidden');
+            setTimeout(() => {
+                confirmModal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+            }, 10);
+        }
+
+        window.hideClearModal = function() {
+            confirmModal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => { confirmModal.classList.add('hidden'); }, 300);
+        }
+
+        window.confirmClear = function() {
+            transactions = [];
+            saveTx();
+            updateUI();
+            window.hideClearModal();
+        }
+
+        window.requestDelete = function(id) {
+            deleteIdToRemove = id;
+            deleteModal.classList.remove('hidden');
+            setTimeout(() => {
+                deleteModal.classList.remove('opacity-0');
+                deleteModalContent.classList.remove('scale-95');
+            }, 10);
+        }
+
+        window.hideDeleteModal = function() {
+            deleteModal.classList.add('opacity-0');
+            deleteModalContent.classList.add('scale-95');
+            setTimeout(() => {
+                deleteModal.classList.add('hidden');
+                deleteIdToRemove = null;
+            }, 300);
+        }
+
+        window.confirmDelete = function() {
+            if (!deleteIdToRemove) return;
+            transactions = transactions.filter(tx => tx.id !== deleteIdToRemove);
+            saveTx();
+            updateUI();
+            window.hideDeleteModal();
+        }
+
+        window.addEventListener('click', (e) => {
+            if (e.target === confirmModal) window.hideClearModal();
+            if (e.target === deleteModal) window.hideDeleteModal();
+        });
+
+        transactions = loadTx().sort((a, b) => b.timestamp - a.timestamp);
+        updateUI();
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.error('SW error:', err));
+            });
+        }
+    </script>
+</body>
+</html>
